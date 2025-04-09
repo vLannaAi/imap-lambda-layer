@@ -8,7 +8,14 @@ A lightweight AWS Lambda Layer for interacting with IMAP servers. This library p
 - Search for messages by Message-ID
 - Move messages between folders
 - List folders and messages
-- Optimized for AWS Lambda environments
+- Optimized for AWS Lambda environments with connection reuse
+- Modern ES Modules syntax
+- Node.js 22+ compatibility
+
+## Requirements
+
+- Node.js 22 or later
+- AWS Lambda Node.js 22 runtime
 
 ## Installation
 
@@ -24,15 +31,31 @@ A lightweight AWS Lambda Layer for interacting with IMAP servers. This library p
 npm install imap-lambda-layer
 ```
 
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/vLannaAi/imap-lambda-layer.git
+cd imap-lambda-layer
+
+# Install dependencies
+npm install
+
+# Build the Lambda Layer package
+npm run package
+```
+
+The packaged Lambda Layer will be available in the `dist` directory as `imap-lambda-layer.zip`.
+
 ## Usage
 
 ### In AWS Lambda
 
 ```javascript
 // Import the ImapClient from the Lambda Layer
-const { ImapClient } = require('/opt/nodejs/imap-layer');
+import { ImapClient, getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Configure IMAP client
   const config = {
     host: process.env.IMAP_HOST,
@@ -44,8 +67,8 @@ exports.handler = async (event, context) => {
     }
   };
   
-  // Create IMAP client
-  const imapClient = new ImapClient(config);
+  // Get or create IMAP client (using the optimized instance reuse)
+  const imapClient = getImapClient(config);
   
   try {
     // Connect to the IMAP server
@@ -80,11 +103,24 @@ exports.handler = async (event, context) => {
         error: error.message
       })
     };
-  } finally {
-    // Always disconnect from the IMAP server
-    await imapClient.disconnect();
   }
+  // Note: We don't disconnect in the finally block anymore
+  // because we're reusing the connection across invocations
 };
+```
+
+## Lambda Optimization
+
+This library is optimized for AWS Lambda environments by implementing connection pooling. Connections are cached and reused across function invocations when the Lambda container is reused, which can significantly improve performance.
+
+```javascript
+// Get a cached client instance (recommended for Lambda)
+import { getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+const imapClient = getImapClient(config);
+
+// If you need to clear the connection cache (rarely needed)
+import { clearImapClientCache } from '/opt/nodejs/imap-layer/index.mjs';
+await clearImapClientCache();
 ```
 
 ## API Reference
@@ -94,6 +130,7 @@ exports.handler = async (event, context) => {
 #### Constructor
 
 ```javascript
+import { ImapClient } from '/opt/nodejs/imap-layer/index.mjs';
 const imapClient = new ImapClient(config);
 ```
 
@@ -172,18 +209,52 @@ const messages = await imapClient.listMessages('INBOX', 10);
 - `limit` (number, optional): Maximum number of messages to return (default: 10)
 - Returns: Array of message objects
 
+### Utility Functions
+
+#### getImapClient(config)
+
+Gets a cached IMAP client instance or creates a new one.
+
+```javascript
+import { getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+const imapClient = getImapClient(config);
+```
+
+- `config` (Object): IMAP connection configuration (same as ImapClient constructor)
+- Returns: ImapClient instance
+
+#### clearImapClientCache()
+
+Clears all cached IMAP client instances.
+
+```javascript
+import { clearImapClientCache } from '/opt/nodejs/imap-layer/index.mjs';
+await clearImapClientCache();
+```
+
 ## Development
 
 ### Prerequisites
 
-- Node.js 14.x or later
-- npm 6.x or later
+- Node.js 22.x or later
+- npm 8.x or later
 
 ### Setup
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Run tests: `node test.js`
+3. Run tests: `npm test`
+
+### Build Scripts
+
+The package includes several npm scripts to help with development:
+
+- `npm run clean` - Clean artifacts and prepare dist directory
+- `npm run build` - Build the Lambda Layer
+- `npm run install-deps` - Install production dependencies
+- `npm run zip` - Create the zip package
+- `npm run package` - Run all of the above in sequence
+- `npm test` - Run tests
 
 ### Testing
 
@@ -198,7 +269,7 @@ export TEST_MESSAGE_ID=<example-message-id@domain.com>
 export SOURCE_FOLDER=INBOX
 export TARGET_FOLDER=Archive
 
-node test.js
+npm test
 ```
 
 ## License
