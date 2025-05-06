@@ -67,13 +67,17 @@ async function runTests() {
     // Test 3: List messages in INBOX
     const sourceFolder = process.env.SOURCE_FOLDER || 'INBOX';
     console.log(`\nTest 3: Listing messages in ${sourceFolder}...`);
-    const messages = await imapClient.listMessages(sourceFolder, 5);
+    const messages = await imapClient.listSESMessages(sourceFolder, 5);
     console.log(`✅ Found ${messages.length} messages in ${sourceFolder}`);
     if (messages.length > 0) {
       console.log('  First message:');
       console.log(`  - Subject: ${messages[0].envelope.subject}`);
       console.log(`  - From: ${messages[0].envelope.from[0].address}`);
       console.log(`  - Date: ${messages[0].envelope.date}`);
+      console.log(`  - SesID: ${messages[0].sesId}`);
+      console.log(`  - Message-ID: ${messages[0].envelope.messageId}`);
+      console.log(`  - Headers: ${messages[0].headers}`);
+
     }
     
     // // Test 4: Search for message by Message-ID

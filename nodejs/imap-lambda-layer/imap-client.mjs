@@ -150,6 +150,7 @@ export class ImapClient {
     return tree;
   }
 
+
   /**
    * List messages in a folder
    *
@@ -181,32 +182,79 @@ export class ImapClient {
         uid: true,
         flags: true,
         envelope: true,
-        bodyStructure: true,
-        bodyParts: ["HEADER.FIELDS (FROM)"],
       })) {
+        messages.push(message);
+      }
 
-        // Process the Received header from bodyParts
-        // if (message.bodyParts) {
-        //   if (message.bodyParts["HEADER.FIELDS (RECEIVED)"]) {
-        //     const receivedHeaderPart =
-        //       message.bodyParts["HEADER.FIELDS (RECEIVED)"];
-        //     let headerValue = "";
+      return messages.reverse(); // Return newest first
+    } finally {
+      // Always release the lock
+      lock.release();
+    }
+  }
 
-        //     // Stream the content
-        //     for await (const chunk of receivedHeaderPart.content) {
-        //       headerValue += chunk.toString("utf8");
-        //     }
 
-        //     // Store the raw header
-        //     message.receivedHeader = headerValue.trim();
-        //   }
-        // }
 
-        console.log('  uid', JSON.stringify(message.uid, null, 2));
-        console.log('  flags', JSON.stringify(message.flags, null, 2));
-        console.log('  envelope', JSON.stringify(message.envelope, null, 2));
-        console.log('  bodyStructure', JSON.stringify(message.bodyStructure, null, 2));
-        console.log('  bodyParts', JSON.stringify(message.bodyParts, null, 2));
+  /**
+   * List AWS SES messages in a folder
+   *
+   * @param {string} folder - Folder to list messages from
+   * @param {number} limit - Maximum number of messages to return (default: 10)
+   * @returns {Promise<Array>} - Array of message objects with sesId property
+   */
+  async listSESMessages(folder, limit = 10) {
+    await this.connect();
+
+    const lock = await this.client.getMailboxLock(folder);
+
+    try {
+      const messages = [];
+
+      // Get the total number of messages
+      const mailbox = this.client.mailbox;
+
+      if (!mailbox.exists) {
+        return [];
+      }
+
+      // Calculate the range to fetch (most recent messages first)
+      const from = Math.max(1, mailbox.exists - limit + 1);
+      const to = mailbox.exists;
+
+      // Fetch messages
+      for await (const message of this.client.fetch(`${from}:${to}`, {
+        uid: true,
+        flags: true,
+        envelope: true,
+        headers: ['received'],
+      })) {
+        console.log(' A message', message);
+        message.headers = message.headers.toString('utf8');
+        const headerStr = message.headers;
+        if (headerStr.includes('amazonaws.com') && headerStr.includes('SMTP id')) {
+          const smtpIdIndex = headerStr.indexOf('SMTP id');
+          if (smtpIdIndex > 0) {
+            const afterSmtpId = headerStr.substring(smtpIdIndex + 8).trim();
+            let extractedSesId;            
+            // The SES ID is the next word (until whitespace, newline, or semicolon)
+            const endOfIdSpace = afterSmtpId.indexOf(' ');
+            const endOfIdNewline = afterSmtpId.indexOf('\n');
+            const endOfIdSemicolon = afterSmtpId.indexOf(';');
+            
+            if (endOfIdSpace > 0) {
+              extractedSesId = afterSmtpId.substring(0, endOfIdSpace).trim();
+            } else if (endOfIdNewline > 0) {
+              extractedSesId = afterSmtpId.substring(0, endOfIdNewline).trim();
+            } else if (endOfIdSemicolon > 0) {
+              extractedSesId = afterSmtpId.substring(0, endOfIdSemicolon).trim();
+            } else {
+              extractedSesId = afterSmtpId.trim();
+            }
+
+            message.sesId = extractedSesId;
+          }
+        }
+
         messages.push(message);
       }
 

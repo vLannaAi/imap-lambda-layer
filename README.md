@@ -209,6 +209,18 @@ const messages = await imapClient.listMessages('INBOX', 10);
 - `limit` (number, optional): Maximum number of messages to return (default: 10)
 - Returns: Array of message objects
 
+##### listSESMessages(folder, limit)
+
+Lists messages in a folder and extracts AWS SES ID from messages sent through Amazon SES.
+
+```javascript
+const messages = await imapClient.listSESMessages('INBOX', 10);
+```
+
+- `folder` (string): Folder to list messages from
+- `limit` (number, optional): Maximum number of messages to return (default: 10)
+- Returns: Array of message objects with an additional `sesId` property for messages sent through AWS SES
+
 ##### getMessageHeaders(folder, identifier, headerName)
 
 Gets message headers from a message identified by UID or Message-ID.

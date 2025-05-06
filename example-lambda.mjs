@@ -74,6 +74,14 @@ export const handler = async (event, context) => {
         );
         break;
         
+      case 'listSESMessages':
+        // List AWS SES messages in a folder
+        result = await imapClient.listSESMessages(
+          event.folder || 'INBOX',
+          event.limit || 10
+        );
+        break;
+        
       case 'getHeaders':
         // Get processed message headers
         result = await imapClient.getMessageHeaders(
