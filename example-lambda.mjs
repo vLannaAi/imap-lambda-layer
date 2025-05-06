@@ -6,7 +6,7 @@
  */
 
 // Import the ImapClient from the Lambda Layer
-import { ImapClient, getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+import { ImapClient, getImapClient } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 
 /**
  * Lambda handler function
@@ -71,6 +71,24 @@ export const handler = async (event, context) => {
         result = await imapClient.listMessages(
           event.folder || 'INBOX',
           event.limit || 10
+        );
+        break;
+        
+      case 'getHeaders':
+        // Get processed message headers
+        result = await imapClient.getMessageHeaders(
+          event.folder || 'INBOX',
+          event.identifier || event.messageId,
+          event.headerName
+        );
+        break;
+        
+      case 'getRawHeaders':
+        // Get raw message headers
+        result = await imapClient.getRawMessageHeaders(
+          event.folder || 'INBOX',
+          event.identifier || event.messageId,
+          event.headerName
         );
         break;
         

@@ -53,7 +53,7 @@ The packaged Lambda Layer will be available in the `dist` directory as `imap-lam
 
 ```javascript
 // Import the ImapClient from the Lambda Layer
-import { ImapClient, getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+import { ImapClient, getImapClient } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 
 export const handler = async (event, context) => {
   // Configure IMAP client
@@ -115,11 +115,11 @@ This library is optimized for AWS Lambda environments by implementing connection
 
 ```javascript
 // Get a cached client instance (recommended for Lambda)
-import { getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+import { getImapClient } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 const imapClient = getImapClient(config);
 
 // If you need to clear the connection cache (rarely needed)
-import { clearImapClientCache } from '/opt/nodejs/imap-layer/index.mjs';
+import { clearImapClientCache } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 await clearImapClientCache();
 ```
 
@@ -130,7 +130,7 @@ await clearImapClientCache();
 #### Constructor
 
 ```javascript
-import { ImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+import { ImapClient } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 const imapClient = new ImapClient(config);
 ```
 
@@ -209,6 +209,43 @@ const messages = await imapClient.listMessages('INBOX', 10);
 - `limit` (number, optional): Maximum number of messages to return (default: 10)
 - Returns: Array of message objects
 
+##### getMessageHeaders(folder, identifier, headerName)
+
+Gets message headers from a message identified by UID or Message-ID.
+
+```javascript
+// Get all headers as an object
+const allHeaders = await imapClient.getMessageHeaders('INBOX', '<example-message-id@domain.com>');
+
+// Get a specific header
+const subject = await imapClient.getMessageHeaders('INBOX', '<example-message-id@domain.com>', 'subject');
+
+// Using UID instead of Message-ID
+const allHeaders = await imapClient.getMessageHeaders('INBOX', 12345);
+```
+
+- `folder` (string): Folder containing the message
+- `identifier` (string|number): Either a Message-ID string or a UID number
+- `headerName` (string, optional): Specific header name to extract
+- Returns: All headers as object, specific header as string, or null if not found
+
+##### getRawMessageHeaders(folder, identifier, headerName)
+
+Gets raw message headers from a message identified by UID or Message-ID.
+
+```javascript
+// Get all raw headers as a string
+const rawHeaders = await imapClient.getRawMessageHeaders('INBOX', '<example-message-id@domain.com>');
+
+// Get a specific raw header line
+const receivedHeader = await imapClient.getRawMessageHeaders('INBOX', '<example-message-id@domain.com>', 'Received');
+```
+
+- `folder` (string): Folder containing the message
+- `identifier` (string|number): Either a Message-ID string or a UID number
+- `headerName` (string, optional): Specific header name to extract (case-insensitive)
+- Returns: Raw headers as string, specific header line, or null if not found
+
 ### Utility Functions
 
 #### getImapClient(config)
@@ -216,7 +253,7 @@ const messages = await imapClient.listMessages('INBOX', 10);
 Gets a cached IMAP client instance or creates a new one.
 
 ```javascript
-import { getImapClient } from '/opt/nodejs/imap-layer/index.mjs';
+import { getImapClient } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 const imapClient = getImapClient(config);
 ```
 
@@ -228,7 +265,7 @@ const imapClient = getImapClient(config);
 Clears all cached IMAP client instances.
 
 ```javascript
-import { clearImapClientCache } from '/opt/nodejs/imap-layer/index.mjs';
+import { clearImapClientCache } from '/opt/nodejs/imap-lambda-layer/index.mjs';
 await clearImapClientCache();
 ```
 

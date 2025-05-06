@@ -140,3 +140,89 @@ A comprehensive test script is included to verify all functionality:
 
 ## Conclusion
 The implemented IMAP Lambda Layer provides a simple, efficient way to interact with IMAP servers from AWS Lambda functions. It meets all the specified requirements and is ready for deployment and use in production environments.
+
+## Header Extraction Methods
+
+### `getMessageHeaders(folder, identifier, headerName)`
+
+This method provides access to parsed message headers using ImapFlow's built-in header handling.
+
+#### Implementation Details:
+
+1. **Message Identification**:
+   - Accepts either a UID (number) or Message-ID (string)
+   - For Message-IDs, performs a search to find the corresponding UID
+   - Handles proper cleaning of Message-IDs by removing angle brackets if present
+
+2. **Header Fetching**:
+   - Uses ImapFlow's `fetchOne` method with the `headers: true` option
+   - ImapFlow automatically parses headers into a `Map` object
+
+3. **Return Formats**:
+   - When no specific header is requested: Returns a plain JavaScript object with all headers
+   - When a specific header is requested: Returns just that header's value as a string
+   - Returns `null` if the message is not found
+
+4. **Resource Management**:
+   - Uses mailbox locks to ensure proper IMAP protocol sequencing
+   - Properly handles connections and disconnections
+   - Always releases locks in the `finally` block to prevent deadlocks
+
+### `getRawMessageHeaders(folder, identifier, headerName)`
+
+This method provides access to raw, unparsed message headers, which is useful when you need the exact format of headers including original casing, multi-line formats, etc.
+
+#### Implementation Details:
+
+1. **Message Identification**:
+   - Same approach as `getMessageHeaders` - accepts UID or Message-ID
+   - Performs proper Message-ID cleaning and searching
+
+2. **Raw Header Fetching**:
+   - Uses ImapFlow's `fetchOne` method with the `headersBuf: true` option
+   - This returns the raw headers as a Buffer object, which is then converted to a UTF-8 string
+
+3. **Return Formats**:
+   - When no specific header is requested: Returns the complete raw headers as a string
+   - When a specific header is requested: Uses regex to extract the specific header line, including any folded lines
+   - Returns `null` if the message is not found or the requested header doesn't exist
+
+4. **Regular Expression for Header Extraction**:
+   - Uses a case-insensitive regex that handles folded header lines (headers that span multiple lines)
+   - Pattern: `/^HeaderName:\s*(.+(?:\r?\n\s+.+)*)/im`
+
+## Use Cases
+
+1. **Processed Headers (getMessageHeaders)**:
+   - When you need normalized header values
+   - When you want a clean JavaScript object structure
+   - When you need to work with decoded headers (ImapFlow handles MIME decoding)
+
+2. **Raw Headers (getRawMessageHeaders)**:
+   - When you need the exact, original format of headers
+   - When you need to preserve multi-line structures
+   - When you need to see all header parameters exactly as they appear in the message
+
+## Implementation Considerations
+
+1. **Performance Optimization**:
+   - Both methods reuse the same message identification logic
+   - Mailbox locks are properly managed to prevent deadlocks
+   - Connection reuse is maintained through the existing architecture
+
+2. **Error Handling**:
+   - Both methods handle cases where messages aren't found
+   - Lock releasing is guaranteed through `finally` blocks
+   - Connection states are properly managed
+
+3. **AWS Lambda Optimization**:
+   - These methods work seamlessly with the existing connection reuse mechanism
+   - No additional connections are created, maintaining the Lambda optimization benefits
+
+## Integration with Existing Code
+
+The new methods follow the same patterns as the existing `ImapClient` methods:
+- Similar parameter structure
+- Similar error handling
+- Similar resource management
+- Consistent return value patterns

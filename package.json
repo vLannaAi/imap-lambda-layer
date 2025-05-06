@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "A lightweight AWS Lambda Layer for interacting with IMAP servers",
   "type": "module",
-  "main": "index.mjs",
+  "main": "nodejs/imap-lambda-layer/index.mjs",
   "engines": {
     "node": ">=22.0.0"
   },
   "scripts": {
     "clean": "echo '\n🧹 Cleaning artifacts:\n' && rm -rf dist/* && mkdir -p dist",
-    "build": "echo '\n🔨 Building Lambda Layer:\n' && mkdir -p dist/nodejs && cp -r src/* dist/nodejs/ && cp package*.json dist/nodejs/",
-    "install-deps": "echo '\n📦 Installing dependencies:\n' && cd dist/nodejs && npm install --production",
+    "build": "echo '\n🔨 Building Lambda Layer:\n' && mkdir -p dist/nodejs && cp -r nodejs/imap-lambda-layer dist/nodejs/",
+    "install-deps": "echo '\n📦 Installing dependencies:\n' && cd dist/nodejs/imap-lambda-layer && npm install --production",
     "zip": "echo '\n📦 Creating zip package:\n' && cd dist && zip -r imap-lambda-layer.zip nodejs",
     "package": "npm run -s clean && npm run -s build && npm run -s install-deps && npm run -s zip",
     "test": "echo '\n🧪 Running tests:\n' && node --test test/*.mjs"
@@ -22,7 +22,7 @@
     "layer",
     "email"
   ],
-  "author": "",
+  "author": "vLannaAi",
   "license": "MIT",
   "dependencies": {
     "imapflow": "^1.0.184"

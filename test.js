@@ -17,7 +17,7 @@
  * - TARGET_FOLDER: Target folder for move operation
  */
 
-const ImapClient = require('./nodejs/imap-client');
+const { ImapClient } = require('./nodejs/imap-lambda-layer');
 
 // Configuration from environment variables
 const config = {
