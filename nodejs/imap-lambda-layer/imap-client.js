@@ -180,7 +180,10 @@ class ImapClient {
       for await (const message of this.client.fetch(`${from}:${to}`, {
         uid: true,
         flags: true,
-        envelope: true
+        envelope: true,
+        bodyStructure: true,
+        source: true,
+        bodyParts: ['HEADERS.FIELDS (RECEIVED)'],
       })) {
         messages.push(message);
       }

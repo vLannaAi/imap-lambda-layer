@@ -13,7 +13,7 @@
     "install-deps": "echo '\n📦 Installing dependencies:\n' && cd dist/nodejs/imap-lambda-layer && npm install --production",
     "zip": "echo '\n📦 Creating zip package:\n' && cd dist && zip -r imap-lambda-layer.zip nodejs",
     "package": "npm run -s clean && npm run -s build && npm run -s install-deps && npm run -s zip",
-    "test": "echo '\n🧪 Running tests:\n' && node --test test/*.mjs"
+    "test": "echo '\n🧪 Running tests:\n' && node --test test.mjs"
   },
   "keywords": [
     "imap",
@@ -25,6 +25,9 @@
   "author": "vLannaAi",
   "license": "MIT",
   "dependencies": {
-    "imapflow": "^1.0.184"
+    "imapflow": "^1.0.186"
+  },
+  "devDependencies": {
+    "dotenv": "^16.5.0"
   }
 }
