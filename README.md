@@ -8,6 +8,7 @@ A lightweight AWS Lambda Layer for interacting with IMAP servers. This library p
 - Search for messages by Message-ID
 - Move messages between folders
 - List folders and messages
+- Check if folders exist and create folder hierarchies
 - Optimized for AWS Lambda environments with connection reuse
 - Modern ES Modules syntax
 - Node.js 22+ compatibility
@@ -221,6 +222,18 @@ const messages = await imapClient.listSESMessages('INBOX', 10);
 - `limit` (number, optional): Maximum number of messages to return (default: 10)
 - Returns: Array of message objects with an additional `sesId` property for messages sent through AWS SES
 
+##### searchMessageBySesId(folder, sesId)
+
+Searches for a message by its AWS SES ID in the specified folder.
+
+```javascript
+const message = await imapClient.searchMessageBySesId('INBOX', 'YOUR-SES-MESSAGE-ID');
+```
+
+- `folder` (string): Folder to search in
+- `sesId` (string): AWS SES ID to search for
+- Returns: Message object with the `sesId` property if found, null otherwise
+
 ##### getMessageHeaders(folder, identifier, headerName)
 
 Gets message headers from a message identified by UID or Message-ID.
@@ -248,15 +261,39 @@ Gets raw message headers from a message identified by UID or Message-ID.
 ```javascript
 // Get all raw headers as a string
 const rawHeaders = await imapClient.getRawMessageHeaders('INBOX', '<example-message-id@domain.com>');
-
-// Get a specific raw header line
-const receivedHeader = await imapClient.getRawMessageHeaders('INBOX', '<example-message-id@domain.com>', 'Received');
 ```
 
 - `folder` (string): Folder containing the message
 - `identifier` (string|number): Either a Message-ID string or a UID number
 - `headerName` (string, optional): Specific header name to extract (case-insensitive)
 - Returns: Raw headers as string, specific header line, or null if not found
+
+##### folderExists(folderPath)
+
+Checks if a folder exists on the IMAP server.
+
+```javascript
+// Check if a folder exists
+const exists = await imapClient.folderExists('INBOX/Archive');
+
+// Check nested folders
+const exists = await imapClient.folderExists('INBOX/Work/Projects/2023');
+```
+
+- `folderPath` (string): Folder path to check (can include nested folders with delimiter)
+- Returns: Boolean indicating whether the folder exists
+
+##### folderMake(folderPath)
+
+Creates a folder and all intermediate folders if they don't exist.
+
+```javascript
+// Create a folder (and any missing parent folders in the path)
+const created = await imapClient.folderMake('INBOX/Archive/2023/Q4');
+```
+
+- `folderPath` (string): Path of the folder to create (including nested structure)
+- Returns: Boolean indicating success or failure
 
 ### Utility Functions
 

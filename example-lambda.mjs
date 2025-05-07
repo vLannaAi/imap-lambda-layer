@@ -82,6 +82,14 @@ export const handler = async (event, context) => {
         );
         break;
         
+      case 'searchMessageBySesId':
+        // Search for a message by SES ID
+        result = await imapClient.searchMessageBySesId(
+          event.folder || 'INBOX',
+          event.sesId
+        );
+        break;
+        
       case 'getHeaders':
         // Get processed message headers
         result = await imapClient.getMessageHeaders(
@@ -97,6 +105,20 @@ export const handler = async (event, context) => {
           event.folder || 'INBOX',
           event.identifier || event.messageId,
           event.headerName
+        );
+        break;
+        
+      case 'folderExists':
+        // Check if a folder exists
+        result = await imapClient.folderExists(
+          event.folderPath
+        );
+        break;
+        
+      case 'folderMake':
+        // Create a folder and all intermediate folders if needed
+        result = await imapClient.folderMake(
+          event.folderPath
         );
         break;
         

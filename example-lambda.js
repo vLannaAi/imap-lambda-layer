@@ -6,7 +6,7 @@
  */
 
 // Import the ImapClient from the Lambda Layer
-const { ImapClient } = require('/opt/nodejs/imap-lambda-layer');
+const { ImapClient, getImapClient } = require('/opt/nodejs/imap-lambda-layer');
 
 /**
  * Lambda handler function
@@ -31,8 +31,8 @@ exports.handler = async (event, context) => {
     }
   };
   
-  // Create IMAP client
-  const imapClient = new ImapClient(config);
+  // Get or create IMAP client (using the optimized instance reuse)
+  const imapClient = getImapClient(config);
   
   try {
     // Connect to the IMAP server
@@ -74,6 +74,22 @@ exports.handler = async (event, context) => {
         );
         break;
         
+      case 'listSESMessages':
+        // List AWS SES messages in a folder
+        result = await imapClient.listSESMessages(
+          event.folder || 'INBOX',
+          event.limit || 10
+        );
+        break;
+        
+      case 'searchMessageBySesId':
+        // Search for a message by SES ID
+        result = await imapClient.searchMessageBySesId(
+          event.folder || 'INBOX',
+          event.sesId
+        );
+        break;
+        
       case 'getHeaders':
         // Get processed message headers
         result = await imapClient.getMessageHeaders(
@@ -89,6 +105,20 @@ exports.handler = async (event, context) => {
           event.folder || 'INBOX',
           event.identifier || event.messageId,
           event.headerName
+        );
+        break;
+        
+      case 'folderExists':
+        // Check if a folder exists
+        result = await imapClient.folderExists(
+          event.folderPath
+        );
+        break;
+        
+      case 'folderMake':
+        // Create a folder and all intermediate folders if needed
+        result = await imapClient.folderMake(
+          event.folderPath
         );
         break;
         
@@ -118,12 +148,8 @@ exports.handler = async (event, context) => {
         error: error.message
       })
     };
-  } finally {
-    // Always disconnect from the IMAP server
-    try {
-      await imapClient.disconnect();
-    } catch (error) {
-      console.error('Error disconnecting:', error);
-    }
   }
+  // Note: We don't disconnect in the finally block anymore
+  // because we're reusing the connection across invocations
+  // The connection will be managed by the getImapClient function
 };
